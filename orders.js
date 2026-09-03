@@ -1,4 +1,17 @@
-import { kv } from '@vercel/kv';
+import admin from 'firebase-admin';
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+    })
+  });
+}
+
+const db = admin.firestore();
+const ordersCollection = db.collection('orders');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
@@ -15,22 +28,17 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Champs manquants' });
       }
 
-      const id = `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const order = {
-        id,
+      const docRef = await ordersCollection.add({
         nom,
         telephone,
         reseau,
         forfait,
         montant,
         statut: 'en_attente', // en_attente | confirme | annule
-        date: new Date().toISOString()
-      };
+        date: admin.firestore.FieldValue.serverTimestamp()
+      });
 
-      await kv.set(id, order);
-      await kv.zadd('orders_index', { score: Date.now(), member: id });
-
-      return res.status(200).json({ ok: true, id });
+      return res.status(200).json({ ok: true, id: docRef.id });
     }
 
     if (req.method === 'GET') {
@@ -38,10 +46,17 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Non autorisé' });
       }
 
-      const ids = await kv.zrange('orders_index', 0, -1, { rev: true });
-      const orders = ids && ids.length ? await Promise.all(ids.map((id) => kv.get(id))) : [];
+      const snapshot = await ordersCollection.orderBy('date', 'desc').get();
+      const orders = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          date: data.date ? data.date.toDate().toISOString() : new Date().toISOString()
+        };
+      });
 
-      return res.status(200).json({ orders: orders.filter(Boolean) });
+      return res.status(200).json({ orders });
     }
 
     if (req.method === 'PATCH') {
@@ -54,13 +69,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'id et statut requis' });
       }
 
-      const order = await kv.get(id);
-      if (!order) {
-        return res.status(404).json({ error: 'Commande introuvable' });
-      }
-
-      order.statut = statut;
-      await kv.set(id, order);
+      await ordersCollection.doc(id).update({ statut });
 
       return res.status(200).json({ ok: true });
     }
@@ -75,8 +84,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'id requis' });
       }
 
-      await kv.del(id);
-      await kv.zrem('orders_index', id);
+      await ordersCollection.doc(id).delete();
 
       return res.status(200).json({ ok: true });
     }
