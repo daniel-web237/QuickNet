@@ -191,13 +191,33 @@
     paymentInstructions.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
-  confirmPaidBtn.addEventListener('click', function(){
+  confirmPaidBtn.addEventListener('click', async function(){
+    confirmPaidBtn.disabled = true;
+
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: pendingNom,
+          telephone: pendingTelFormatted,
+          reseau: selectedNet.toUpperCase(),
+          forfait: selectedOffer.label + ' (' + selectedOffer.sub + ')',
+          montant: selectedOffer.price
+        })
+      });
+    } catch (err){
+      // même en cas d'erreur d'enregistrement, on laisse le client confirmer sur WhatsApp
+    }
+
     const msg = 'Bonjour, je viens d\'envoyer le paiement pour le forfait :\n' +
       selectedOffer.label + ' (' + selectedOffer.sub + ') — ' + fmt(selectedOffer.price) + '\n\n' +
       'Nom : ' + pendingNom + '\n' +
       'Numéro : ' + pendingTelFormatted + '\n' +
       'Réseau : ' + selectedNet.toUpperCase();
     window.open('https://wa.me/237655329538?text=' + encodeURIComponent(msg), '_blank');
+
+    confirmPaidBtn.disabled = false;
   });
 
   cancelInstBtn.addEventListener('click', function(){
