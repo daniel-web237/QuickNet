@@ -20,6 +20,15 @@ function isAuthorized(req) {
   return Boolean(ADMIN_PASSWORD) && provided === ADMIN_PASSWORD;
 }
 
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans caractères ambigus (0/O, 1/I)
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
@@ -28,20 +37,39 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Champs manquants' });
       }
 
+      const code = generateCode();
+
       const docRef = await ordersCollection.add({
         nom,
         telephone,
         reseau,
         forfait,
         montant,
+        code,
         statut: 'en_attente', // en_attente | confirme | annule
         date: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      return res.status(200).json({ ok: true, id: docRef.id });
+      return res.status(200).json({ ok: true, id: docRef.id, code });
     }
 
     if (req.method === 'GET') {
+      // Vérification publique du statut par code (le client, sans mot de passe)
+      if (req.query.code) {
+        const snapshot = await ordersCollection.where('code', '==', String(req.query.code).toUpperCase()).limit(1).get();
+        if (snapshot.empty) {
+          return res.status(404).json({ error: 'Commande introuvable' });
+        }
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        return res.status(200).json({
+          statut: data.statut,
+          forfait: data.forfait,
+          montant: data.montant
+        });
+      }
+
+      // Liste complète, réservée à l'admin
       if (!isAuthorized(req)) {
         return res.status(401).json({ error: 'Non autorisé' });
       }
