@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Commandes</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .admin-wrap{ max-width: 900px; margin: 0 auto; padding: 32px 20px 60px; }
+  .login-box{ max-width: 360px; margin: 80px auto; }
+  table{ width:100%; border-collapse: collapse; font-size: 14px; }
+  th, td{ text-align:left; padding: 10px 8px; border-bottom: 1px solid var(--panel-line); vertical-align: top; }
+  th{ color: var(--ink-dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; }
+  .status-pill{ display:inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight:600; }
+  .status-en_attente{ background:#3A2C00; color: var(--mtn); }
+  .status-confirme{ background:#0E3330; color: var(--signal); }
+  .status-annule{ background:#3A1414; color: var(--danger); }
+  .row-actions{ display:flex; gap:6px; flex-wrap: wrap; }
+  .row-actions button{
+    font-size: 12px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--panel-line);
+    background: var(--panel); color: var(--ink); cursor:pointer;
+  }
+  .row-actions button:hover{ border-color: var(--signal); }
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+  .toolbar button{
+    background: var(--panel); border:1.5px solid var(--panel-line); color: var(--ink);
+    padding: 8px 14px; border-radius: 10px; cursor:pointer; font-size: 13px;
+  }
+  #loginError{ color: var(--danger); font-size: 13px; margin-top: 8px; display:none; }
+  .empty-state{ color: var(--ink-dim); text-align:center; padding: 40px 0; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="admin-wrap login-box">
+  <h1 style="font-size:24px; margin-bottom: 18px;">Accès admin</h1>
+  <div class="field">
+    <label for="pwd">Mot de passe</label>
+    <input type="password" id="pwd" placeholder="••••••••">
+  </div>
+  <button class="submit-btn" id="loginBtn">Se connecter</button>
+  <p id="loginError">Mot de passe incorrect.</p>
+</div>
+
+<div id="adminScreen" class="admin-wrap" style="display:none;">
+  <div class="toolbar">
+    <h1 style="font-size:22px; margin:0;">Commandes</h1>
+    <button id="refreshBtn">↻ Actualiser</button>
+  </div>
+  <div id="tableWrap"></div>
+</div>
+
+<script>
+  let adminPassword = '';
+
+  const loginScreen = document.getElementById('loginScreen');
+  const adminScreen = document.getElementById('adminScreen');
+  const loginError = document.getElementById('loginError');
+
+  async function fetchOrders(){
+    const res = await fetch('/api/orders?password=' + encodeURIComponent(adminPassword));
+    if (!res.ok){
+      throw new Error('unauthorized');
+    }
+    const data = await res.json();
+    return data.orders || [];
+  }
+
+  function fmtDate(iso){
+    const d = new Date(iso);
+    return d.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function statusLabel(s){
+    if (s === 'confirme') return 'Confirmé';
+    if (s === 'annule') return 'Annulé';
+    return 'En attente';
+  }
+
+  function renderOrders(orders){
+    const wrap = document.getElementById('tableWrap');
+    if (!orders.length){
+      wrap.innerHTML = '<div class="empty-state">Aucune commande pour le moment.</div>';
+      return;
+    }
+
+    let html = '<table><thead><tr>' +
+      '<th>Date</th><th>Nom</th><th>Téléphone</th><th>Réseau</th><th>Forfait</th><th>Montant</th><th>Statut</th><th>Actions</th>' +
+      '</tr></thead><tbody>';
+
+    orders.forEach(o => {
+      html += '<tr>' +
+        '<td>' + fmtDate(o.date) + '</td>' +
+        '<td>' + o.nom + '</td>' +
+        '<td>' + o.telephone + '</td>' +
+        '<td>' + o.reseau + '</td>' +
+        '<td>' + o.forfait + '</td>' +
+        '<td>' + o.montant + ' F</td>' +
+        '<td><span class="status-pill status-' + o.statut + '">' + statusLabel(o.statut) + '</span></td>' +
+        '<td><div class="row-actions">' +
+          '<button data-id="' + o.id + '" data-status="confirme">Confirmer</button>' +
+          '<button data-id="' + o.id + '" data-status="annule">Annuler</button>' +
+        '</div></td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('button[data-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await fetch('/api/orders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+          body: JSON.stringify({ id: btn.dataset.id, statut: btn.dataset.status })
+        });
+        loadOrders();
+      });
+    });
+  }
+
+  async function loadOrders(){
+    try {
+      const orders = await fetchOrders();
+      renderOrders(orders);
+    } catch (err){
+      document.getElementById('tableWrap').innerHTML = '<div class="empty-state">Erreur de chargement.</div>';
+    }
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    adminPassword = document.getElementById('pwd').value;
+    try {
+      const orders = await fetchOrders();
+      loginScreen.style.display = 'none';
+      adminScreen.style.display = 'block';
+      renderOrders(orders);
+    } catch (err){
+      loginError.style.display = 'block';
+    }
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+</script>
+</body>
+</html>
