@@ -151,4 +151,98 @@
   }
 
   const payBtn = document.getElementById('payBtn');
-  const
+  const payStatus = document.getElementById('payStatus');
+
+  function setPayStatus(text, isError){
+    payStatus.textContent = text;
+    payStatus.style.color = isError ? 'var(--danger)' : 'var(--ink-dim)';
+  }
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  // Interroge le statut toutes les 3s pendant max ~2 minutes
+  async function pollStatus(reference){
+    const maxTries = 40;
+    for (let i = 0; i < maxTries; i++){
+      await sleep(3000);
+      try {
+        const res = await fetch('/api/status?reference=' + encodeURIComponent(reference));
+        const data = await res.json();
+        if (data.status === 'SUCCESSFUL'){
+          return { ok: true, data };
+        }
+        if (data.status === 'FAILED'){
+          return { ok: false, data };
+        }
+        setPayStatus('En attente de votre confirmation sur le téléphone… (' + (i + 1) + ')');
+      } catch (err){
+        // on continue d'essayer en cas d'erreur réseau ponctuelle
+      }
+    }
+    return { ok: false, timeout: true };
+  }
+
+  document.getElementById('subForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    let valid = true;
+
+    const nom = document.getElementById('nom').value.trim();
+    if (!nom){ setFieldError('field-nom', true); valid = false; } else { clearFieldError('field-nom'); }
+
+    const tel = document.getElementById('tel').value.replace(/\s+/g, '');
+    if (!/^6\d{8}$/.test(tel)){ setFieldError('field-tel', true); valid = false; } else { clearFieldError('field-tel'); }
+
+    if (!selectedNet){ setFieldError('field-reseau', true); valid = false; } else { clearFieldError('field-reseau'); }
+
+    if (!selectedOffer){
+      document.getElementById('offers').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    const telFormatted = tel.replace(/(\d)(?=(\d{2})+(?!\d))/g, '$1 ');
+
+    payBtn.disabled = true;
+    setPayStatus('Envoi de la demande de paiement…');
+
+    try {
+      const collectRes = await fetch('/api/collect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: selectedOffer.price,
+          phone: '237' + tel,
+          description: selectedOffer.label + ' - ' + selectedOffer.sub
+        })
+      });
+
+      const collectData = await collectRes.json();
+
+      if (!collectRes.ok){
+        setPayStatus("Le paiement n'a pas pu être initié. Réessayez.", true);
+        payBtn.disabled = false;
+        return;
+      }
+
+      setPayStatus('Vérifiez votre téléphone et validez la demande de paiement…');
+
+      const result = await pollStatus(collectData.reference);
+
+      if (result.ok){
+        setPayStatus('Paiement confirmé ! Ouverture de WhatsApp…');
+        openWhatsapp(buildWhatsappMessage(nom, telFormatted, 'je viens de payer', collectData.reference));
+      } else if (result.timeout){
+        setPayStatus("Toujours en attente. Si vous avez validé, contactez-nous sur WhatsApp avec la référence " + collectData.reference + ".", true);
+      } else {
+        setPayStatus("Le paiement a échoué ou a été annulé. Vous pouvez réessayer.", true);
+      }
+    } catch (err){
+      setPayStatus('Une erreur est survenue. Vérifiez votre connexion et réessayez.', true);
+    } finally {
+      payBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
