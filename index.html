@@ -3,57 +3,300 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bientôt de retour — Connexion illimitée</title>
+<title>Connexion illimitée — MTN & Orange Cameroun</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<style>
-  .maintenance-wrap{
-    min-height: 100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    padding: 24px;
-  }
-  .maintenance-wrap h1{
-    font-size: 30px;
-    margin: 22px 0 14px;
-  }
-  .maintenance-wrap p{
-    color: var(--ink-dim);
-    font-size: 15px;
-    max-width: 36ch;
-    margin: 0 auto 26px;
-  }
-  .maintenance-wrap a.wa-btn{
-    display:inline-flex;
-    align-items:center;
-    gap:9px;
-    background: var(--signal);
-    color: var(--signal-ink);
-    font-family:'Space Grotesk', sans-serif;
-    font-weight:700;
-    font-size: 15px;
-    text-decoration:none;
-    padding: 14px 22px;
-    border-radius: 12px;
-  }
-  .maintenance-wrap svg{ width:18px; height:18px; }
-</style>
 </head>
 <body>
-<div class="maintenance-wrap">
-  <div class="signal-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-  <h1>On revient très vite.</h1>
-  <p>Le site est momentanément en pause pour maintenance. Pour toute question ou souscription en attendant, contactez-nous directement sur WhatsApp.</p>
-  <a class="wa-btn" href="https://wa.me/237655329538" target="_blank" rel="noopener">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.05-1.36A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.09-.44-4.36-1.2l-.31-.18-3 .81.8-2.94-.2-.32A7.95 7.95 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.4-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
-    Nous écrire sur WhatsApp
-  </a>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="signal-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <h1>Restez connecté,<br>sans limite.</h1>
+    <p>Souscrivez à un forfait internet illimité MTN ou Orange, valable sur tous les numéros. Remplissez le formulaire, on vous recontacte sur WhatsApp.</p>
+    <div class="networks">
+      <span class="chip mtn">MTN</span>
+      <span class="chip orange">Orange</span>
+    </div>
+  </div>
+
+  <div class="section-label"><b>1. Choisissez votre forfait</b></div>
+  <div class="offers" id="offers" role="radiogroup" aria-label="Forfaits disponibles"></div>
+
+  <form id="subForm" novalidate>
+    <div class="section-label"><b>2. Vos informations</b></div>
+
+    <div class="field" id="field-nom">
+      <label for="nom">Nom complet</label>
+      <input type="text" id="nom" placeholder="Ex : Adèle Ndiang" autocomplete="name">
+      <div class="field-error">Entrez votre nom.</div>
+    </div>
+
+    <div class="field" id="field-tel">
+      <label for="tel">Numéro à recharger</label>
+      <input type="tel" id="tel" placeholder="Ex : 6 55 32 95 38" autocomplete="tel" inputmode="numeric">
+      <div class="field-error">Entrez un numéro camerounais valide (9 chiffres).</div>
+    </div>
+
+    <div class="field" id="field-reseau">
+      <label>Réseau du numéro</label>
+      <div class="network-toggle" id="networkToggle">
+        <button type="button" data-net="mtn">MTN</button>
+        <button type="button" data-net="orange">Orange</button>
+      </div>
+      <div class="field-error">Sélectionnez un réseau.</div>
+    </div>
+
+    <div class="summary" id="summary" style="display:none;">
+      <div class="summary-row"><span>Forfait</span><b id="sumOffer">—</b></div>
+      <div class="summary-row"><span>Réseau</span><b id="sumNet">—</b></div>
+      <div class="summary-row total"><span>Total</span><b id="sumPrice">—</b></div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="payBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.05-1.36A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.09-.44-4.36-1.2l-.31-.18-3 .81.8-2.94-.2-.32A7.95 7.95 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.4-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
+      Voir comment payer
+    </button>
+    <p class="fine-print" id="payStatus">Paiement par Mobile Money — MTN & Orange.</p>
+  </form>
+
+  <div class="summary" id="paymentInstructions" style="display:none; margin-top: 22px;">
+    <div class="section-label" style="margin: 0 0 14px;"><b>Instructions de paiement</b></div>
+    <div class="summary-row"><span>Montant à envoyer</span><b id="instAmount">—</b></div>
+    <div class="summary-row"><span>Numéro à créditer</span><b id="instNumber">655 329 538</b></div>
+    <p style="color: var(--ink-dim); font-size: 14px; margin: 14px 0 6px;">Composez ce code sur votre téléphone :</p>
+    <p id="instUssd" style="font-family:'Space Grotesk', sans-serif; font-weight:700; font-size: 18px; color: var(--signal); background: var(--navy-deep); padding: 12px 14px; border-radius: 10px; word-break: break-all;">—</p>
+    <p style="color: var(--ink-dim); font-size: 13px; margin: 10px 0 0;">Suivez les instructions qui s'affichent sur votre téléphone pour valider l'envoi.</p>
+
+    <div class="field" id="field-ref" style="margin-top: 18px;">
+      <label for="txRef">Référence de la transaction reçue par SMS</label>
+      <input type="text" id="txRef" placeholder="Ex : MP240315.1245.A12345">
+      <div class="field-error">Entrez la référence reçue par SMS après votre paiement.</div>
+    </div>
+
+    <button type="button" class="submit-btn" id="confirmPaidBtn" style="margin-top: 8px;">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.05-1.36A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.09-.44-4.36-1.2l-.31-.18-3 .81.8-2.94-.2-.32A7.95 7.95 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.4-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
+      J'ai envoyé le paiement
+    </button>
+    <button type="button" id="cancelInstBtn" style="width:100%; background:transparent; border:none; color: var(--ink-dim); font-size: 13px; margin-top: 10px; cursor:pointer; text-decoration: underline;">Annuler et revenir au formulaire</button>
+  </div>
+
+  <div class="summary" id="orderStatusSection" style="display:none; margin-top: 22px; text-align:center;">
+    <div class="section-label" style="margin: 0 0 14px; text-align:left;"><b>Votre commande</b></div>
+    <p style="color: var(--ink-dim); font-size: 13px; margin: 0 0 6px;">Votre code de commande (à donner sur demande) :</p>
+    <p id="orderCodeDisplay" style="font-family:'Space Grotesk', sans-serif; font-weight:700; font-size: 28px; letter-spacing: 0.08em; color: var(--signal); background: var(--navy-deep); padding: 14px; border-radius: 12px; margin: 0 0 16px;">——————</p>
+    <p id="orderStatusMsg" style="font-size: 15px; font-weight:600; margin: 0;">⏳ En attente de confirmation…</p>
+    <p style="color: var(--ink-dim); font-size: 12.5px; margin: 10px 0 0;">Cette page se met à jour automatiquement dès que votre paiement est confirmé.</p>
+  </div>
+
+  <div class="footer-note">2 500 F offre aussi 3 Go chaque jour pendant 2 mois.</div>
 </div>
+
+<script>
+  const OFFERS = [
+    { id: 'o1', price: 1500, label: 'Illimité 1 mois', sub: '2 Go/jour' },
+    { id: 'o2', price: 2500, label: 'Illimité 1 mois', sub: '3 Go/jour' },
+    { id: 'o3', price: 3500, label: 'Illimité 2 mois', sub: '4 Go/jour' },
+    { id: 'o4', price: 4500, label: 'Illimité 3 mois', sub: 'Sans limite de data quotidienne' },
+    { id: 'o5', price: 7500, label: 'Illimité 4 mois', sub: 'Sans limite de data quotidienne' },
+    { id: 'o6', price: 8500, label: 'Illimité 6 mois', sub: 'Sans limite de data quotidienne' },
+    { id: 'o7', price: 20000, label: 'Illimité 9 mois', sub: 'Sans limite de data quotidienne' },
+  ];
+
+  const fmt = n => n.toLocaleString('fr-FR') + ' F';
+
+  const offersEl = document.getElementById('offers');
+  let selectedOffer = null;
+
+  OFFERS.forEach(o => {
+    const row = document.createElement('label');
+    row.className = 'offer';
+    row.dataset.id = o.id;
+    row.innerHTML =
+      '<span class="offer-left">' +
+        '<span class="offer-name">' + o.label + '</span>' +
+        '<span class="offer-sub">' + o.sub + '</span>' +
+      '</span>' +
+      '<span class="offer-price">' + fmt(o.price) + '</span>' +
+      '<input type="radio" name="offer" value="' + o.id + '">';
+    row.addEventListener('click', () => selectOffer(o.id));
+    offersEl.appendChild(row);
+  });
+
+  function selectOffer(id){
+    selectedOffer = OFFERS.find(o => o.id === id);
+    document.querySelectorAll('.offer').forEach(el => {
+      el.classList.toggle('selected', el.dataset.id === id);
+    });
+    updateSummary();
+  }
+
+  let selectedNet = null;
+  const netButtons = document.querySelectorAll('#networkToggle button');
+  netButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedNet = btn.dataset.net;
+      netButtons.forEach(b => b.classList.toggle('active', b === btn));
+      clearFieldError('field-reseau');
+      updateSummary();
+    });
+  });
+
+  function updateSummary(){
+    const box = document.getElementById('summary');
+    if (!selectedOffer){ box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    document.getElementById('sumOffer').textContent = selectedOffer.label + ' — ' + selectedOffer.sub;
+    document.getElementById('sumNet').textContent = selectedNet ? selectedNet.toUpperCase() : '—';
+    document.getElementById('sumPrice').textContent = fmt(selectedOffer.price);
+  }
+
+  function setFieldError(fieldId, show){
+    const el = document.getElementById(fieldId);
+    el.classList.toggle('invalid', show);
+  }
+  function clearFieldError(fieldId){ setFieldError(fieldId, false); }
+
+  document.getElementById('nom').addEventListener('input', () => clearFieldError('field-nom'));
+  document.getElementById('tel').addEventListener('input', () => clearFieldError('field-tel'));
+  document.getElementById('txRef').addEventListener('input', () => clearFieldError('field-ref'));
+
+  const DEPOSIT_NUMBER = '655329538';
+
+  function ussdCode(net, amount){
+    if (net === 'mtn') return '*126*1*' + DEPOSIT_NUMBER + '*' + amount + '#';
+    return '#150*1*' + DEPOSIT_NUMBER + '*' + amount + '#';
+  }
+
+  const subForm = document.getElementById('subForm');
+  const paymentInstructions = document.getElementById('paymentInstructions');
+  const confirmPaidBtn = document.getElementById('confirmPaidBtn');
+  const cancelInstBtn = document.getElementById('cancelInstBtn');
+
+  let pendingNom = '', pendingTelFormatted = '';
+
+  document.getElementById('subForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    let valid = true;
+
+    const nom = document.getElementById('nom').value.trim();
+    if (!nom){ setFieldError('field-nom', true); valid = false; } else { clearFieldError('field-nom'); }
+
+    const tel = document.getElementById('tel').value.replace(/\s+/g, '');
+    if (!/^6\d{8}$/.test(tel)){ setFieldError('field-tel', true); valid = false; } else { clearFieldError('field-tel'); }
+
+    if (!selectedNet){ setFieldError('field-reseau', true); valid = false; } else { clearFieldError('field-reseau'); }
+
+    if (!selectedOffer){
+      document.getElementById('offers').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    pendingNom = nom;
+    pendingTelFormatted = tel.replace(/(\d)(?=(\d{2})+(?!\d))/g, '$1 ');
+
+    document.getElementById('instAmount').textContent = fmt(selectedOffer.price);
+    document.getElementById('instUssd').textContent = ussdCode(selectedNet, selectedOffer.price);
+
+    subForm.style.display = 'none';
+    paymentInstructions.style.display = 'block';
+    paymentInstructions.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  confirmPaidBtn.addEventListener('click', async function(){
+    const txRefInput = document.getElementById('txRef');
+    const txRef = txRefInput.value.trim();
+
+    if (!txRef){
+      setFieldError('field-ref', true);
+      txRefInput.focus();
+      return;
+    }
+    clearFieldError('field-ref');
+
+    confirmPaidBtn.disabled = true;
+
+    let orderCode = null;
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: pendingNom,
+          telephone: pendingTelFormatted,
+          reseau: selectedNet.toUpperCase(),
+          forfait: selectedOffer.label + ' (' + selectedOffer.sub + ')',
+          montant: selectedOffer.price,
+          reference: txRef
+        })
+      });
+      const data = await res.json();
+      orderCode = data.code || null;
+    } catch (err){
+      // on continue même si l'enregistrement échoue, pour ne pas bloquer le client
+    }
+
+    const msg = 'Bonjour, je viens d\'envoyer le paiement pour le forfait :\n' +
+      selectedOffer.label + ' (' + selectedOffer.sub + ') — ' + fmt(selectedOffer.price) + '\n\n' +
+      'Nom : ' + pendingNom + '\n' +
+      'Numéro : ' + pendingTelFormatted + '\n' +
+      'Réseau : ' + selectedNet.toUpperCase() +
+      '\nRéférence SMS : ' + txRef +
+      (orderCode ? '\nCode de commande : ' + orderCode : '');
+    window.open('https://wa.me/237656889326?text=' + encodeURIComponent(msg), '_blank');
+
+    if (orderCode){
+      paymentInstructions.style.display = 'none';
+      const statusSection = document.getElementById('orderStatusSection');
+      document.getElementById('orderCodeDisplay').textContent = orderCode;
+      statusSection.style.display = 'block';
+      statusSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      pollOrderStatus(orderCode);
+    }
+
+    confirmPaidBtn.disabled = false;
+  });
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  async function pollOrderStatus(code){
+    const statusMsg = document.getElementById('orderStatusMsg');
+    const maxTries = 200; // ~ jusqu'à 16-17 minutes en vérifiant toutes les 5s
+    for (let i = 0; i < maxTries; i++){
+      await sleep(5000);
+      try {
+        const res = await fetch('/api/orders?code=' + encodeURIComponent(code));
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.statut === 'confirme'){
+          statusMsg.textContent = '✅ Vous avez souscrit à ' + data.forfait + ' avec succès !';
+          statusMsg.style.color = 'var(--signal)';
+          return;
+        }
+        if (data.statut === 'annule'){
+          statusMsg.textContent = '❌ Cette commande a été annulée. Contactez-nous sur WhatsApp si besoin.';
+          statusMsg.style.color = 'var(--danger)';
+          return;
+        }
+      } catch (err){
+        // on continue d'essayer
+      }
+    }
+    statusMsg.textContent = "Toujours en attente. Si le paiement a bien été effectué, contactez-nous sur WhatsApp avec votre code.";
+  }
+
+  cancelInstBtn.addEventListener('click', function(){
+    paymentInstructions.style.display = 'none';
+    document.getElementById('txRef').value = '';
+    clearFieldError('field-ref');
+    subForm.style.display = 'block';
+  });
+</script>
 </body>
 </html>
