@@ -14,6 +14,33 @@ const db = admin.firestore();
 const ordersCollection = db.collection('orders');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+async function notifyTelegram(order) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+  const text =
+    '🔔 Nouvelle commande QuickNet\n\n' +
+    'Code : ' + order.code + '\n' +
+    'Nom : ' + order.nom + '\n' +
+    'Téléphone : ' + order.telephone + '\n' +
+    'Réseau : ' + order.reseau + '\n' +
+    'Forfait : ' + order.forfait + '\n' +
+    'Montant : ' + order.montant + ' F\n' +
+    (order.reference ? 'Référence SMS : ' + order.reference + '\n' : '') +
+    '\nVérifie ta réception avant de confirmer sur /admin.html';
+
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+    });
+  } catch (err) {
+    // une notif ratée ne doit jamais faire échouer la commande
+  }
+}
 
 function isAuthorized(req) {
   const provided = req.headers['x-admin-password'] || req.query.password;
@@ -50,6 +77,8 @@ export default async function handler(req, res) {
         statut: 'en_attente', // en_attente | confirme | annule
         date: admin.firestore.FieldValue.serverTimestamp()
       });
+
+      await notifyTelegram({ code, nom, telephone, reseau, forfait, montant, reference });
 
       return res.status(200).json({ ok: true, id: docRef.id, code });
     }
