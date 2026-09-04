@@ -32,9 +32,9 @@ function generateCode() {
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
-      const { nom, telephone, reseau, forfait, montant } = req.body || {};
-      if (!nom || !telephone || !reseau || !forfait || !montant) {
-        return res.status(400).json({ error: 'Champs manquants' });
+      const { nom, telephone, reseau, forfait, montant, reference } = req.body || {};
+      if (!nom || !telephone || !reseau || !forfait || !montant || !reference) {
+        return res.status(400).json({ error: 'Champs manquants (référence de transaction requise)' });
       }
 
       const code = generateCode();
@@ -45,6 +45,7 @@ export default async function handler(req, res) {
         reseau,
         forfait,
         montant,
+        reference,
         code,
         statut: 'en_attente', // en_attente | confirme | annule
         date: admin.firestore.FieldValue.serverTimestamp()
