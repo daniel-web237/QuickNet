@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Admin — Commandes</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
 <style>
   .admin-wrap{ max-width: 900px; margin: 0 auto; padding: 32px 20px 60px; }
@@ -86,7 +86,7 @@
     }
 
     let html = '<table><thead><tr>' +
-      '<th>Date</th><th>Code</th><th>Nom</th><th>Téléphone</th><th>Réseau</th><th>Forfait</th><th>Montant</th><th>Statut</th><th>Actions</th>' +
+      '<th>Date</th><th>Code</th><th>Nom</th><th>Téléphone</th><th>Réseau</th><th>Forfait</th><th>Montant</th><th>Référence SMS</th><th>Statut</th><th>Actions</th>' +
       '</tr></thead><tbody>';
 
     orders.forEach(o => {
@@ -98,6 +98,7 @@
         '<td>' + o.reseau + '</td>' +
         '<td>' + o.forfait + '</td>' +
         '<td>' + o.montant + ' F</td>' +
+        '<td>' + (o.reference || '—') + '</td>' +
         '<td><span class="status-pill status-' + o.statut + '">' + statusLabel(o.statut) + '</span></td>' +
         '<td><div class="row-actions">' +
           '<button data-id="' + o.id + '" data-status="confirme">Confirmer</button>' +
