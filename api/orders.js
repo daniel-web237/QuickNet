@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         reseau,
         forfait,
         montant,
-        reference,
+        reference: reference || null,
         code,
         statut: 'en_attente', // en_attente | confirme | annule
         date: admin.firestore.FieldValue.serverTimestamp()
