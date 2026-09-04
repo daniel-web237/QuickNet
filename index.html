@@ -76,7 +76,7 @@
   <div class="summary" id="paymentInstructions" style="display:none; margin-top: 22px;">
     <div class="section-label" style="margin: 0 0 14px; display:flex; align-items:center; justify-content:space-between;"><b>Instructions de paiement</b><img src="favicon.svg" alt="QuickNet" width="22" height="22" style="border-radius:6px;"></div>
     <div class="summary-row"><span>Montant à envoyer</span><b id="instAmount">—</b></div>
-    <div class="summary-row"><span> Agence à créditer </span><b id="instNumber">---QuickNet---</b></div>
+    <div class="summary-row"><span>Numéro à créditer</span><b id="instNumber">655 329 538</b></div>
     <p style="color: var(--ink-dim); font-size: 14px; margin: 14px 0 6px;">Composez ce code sur votre téléphone :</p>
     <p id="instUssd" style="font-family:'Space Grotesk', sans-serif; font-weight:700; font-size: 18px; color: var(--signal); background: var(--navy-deep); padding: 12px 14px; border-radius: 10px; word-break: break-all;">—</p>
     <button type="button" id="dialNowBtn" style="width:100%; background: var(--panel); border:1.5px solid var(--panel-line); color: var(--ink); font-size: 14px; padding: 12px; border-radius: 10px; margin-top: 10px; cursor:pointer;">📞 Composer maintenant</button>
@@ -84,7 +84,7 @@
     <p style="color: var(--ink-dim); font-size: 13px; margin: 10px 0 0;">Suivez les instructions qui s'affichent sur votre téléphone pour valider l'envoi.</p>
 
     <div class="field" id="field-ref" style="margin-top: 18px;">
-      <label for="txRef">Référence de la transaction reçue par SMS (optionnel)</label>
+      <label for="txRef">Référence de la transaction reçue par SMS</label>
       <input type="text" id="txRef" placeholder="Ex : MP240315.1245.A12345">
       <div class="field-error">Entrez la référence reçue par SMS après votre paiement.</div>
     </div>
@@ -284,6 +284,13 @@
 
     const txRefInput = document.getElementById('txRef');
     const txRef = txRefInput.value.trim();
+
+    if (!txRef){
+      setFieldError('field-ref', true);
+      txRefInput.focus();
+      return;
+    }
+    clearFieldError('field-ref');
 
     confirmPaidBtn.disabled = true;
 
