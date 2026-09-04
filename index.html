@@ -31,13 +31,13 @@
 
     <div class="field" id="field-nom">
       <label for="nom">Nom complet</label>
-      <input type="text" id="nom" placeholder="Ex : Jean Paul" autocomplete="name">
+      <input type="text" id="nom" placeholder="Jean Paul" autocomplete="name">
       <div class="field-error">Entrez votre nom.</div>
     </div>
 
     <div class="field" id="field-tel">
       <label for="tel">Numéro à recharger</label>
-      <input type="tel" id="tel" placeholder="Ex : 6 XX XX XX XX" autocomplete="tel" inputmode="numeric">
+      <input type="tel" id="tel" placeholder="6 XX XX XX XX" autocomplete="tel" inputmode="numeric">
       <div class="field-error">Entrez un numéro camerounais valide (9 chiffres).</div>
     </div>
 
@@ -79,10 +79,12 @@
     <div class="summary-row"><span>Numéro à créditer</span><b id="instNumber">655 329 538</b></div>
     <p style="color: var(--ink-dim); font-size: 14px; margin: 14px 0 6px;">Composez ce code sur votre téléphone :</p>
     <p id="instUssd" style="font-family:'Space Grotesk', sans-serif; font-weight:700; font-size: 18px; color: var(--signal); background: var(--navy-deep); padding: 12px 14px; border-radius: 10px; word-break: break-all;">—</p>
+    <button type="button" id="dialNowBtn" style="width:100%; background: var(--panel); border:1.5px solid var(--panel-line); color: var(--ink); font-size: 14px; padding: 12px; border-radius: 10px; margin-top: 10px; cursor:pointer;">📞 Composer maintenant</button>
+    <p id="dialCountdown" style="color: var(--ink-dim); font-size: 12px; text-align:center; margin: 8px 0 0;"></p>
     <p style="color: var(--ink-dim); font-size: 13px; margin: 10px 0 0;">Suivez les instructions qui s'affichent sur votre téléphone pour valider l'envoi.</p>
 
     <div class="field" id="field-ref" style="margin-top: 18px;">
-      <label for="txRef">Référence de la transaction reçue par SMS</label>
+      <label for="txRef">Référence de la transaction reçue par SMS (optionnel)</label>
       <input type="text" id="txRef" placeholder="Ex : MP240315.1245.A12345">
       <div class="field-error">Entrez la référence reçue par SMS après votre paiement.</div>
     </div>
@@ -191,12 +193,45 @@
 
   let pendingNom = '', pendingTelFormatted = '', paymentMethodNet = '';
 
+  let dialCountdownTimer = null;
+
+  function dialUssd(){
+    const code = ussdCode(paymentMethodNet, selectedOffer.price);
+    // encode # en %23 pour un lien tel: valide
+    window.location.href = 'tel:' + encodeURIComponent(code).replace(/%2A/g, '*');
+  }
+
+  function startDialCountdown(){
+    let secondsLeft = 7;
+    const countdownEl = document.getElementById('dialCountdown');
+    countdownEl.textContent = 'Ouverture automatique du composeur dans ' + secondsLeft + 's…';
+
+    clearInterval(dialCountdownTimer);
+    dialCountdownTimer = setInterval(function(){
+      secondsLeft -= 1;
+      if (secondsLeft <= 0){
+        clearInterval(dialCountdownTimer);
+        countdownEl.textContent = '';
+        dialUssd();
+        return;
+      }
+      countdownEl.textContent = 'Ouverture automatique du composeur dans ' + secondsLeft + 's…';
+    }, 1000);
+  }
+
+  document.getElementById('dialNowBtn').addEventListener('click', function(){
+    clearInterval(dialCountdownTimer);
+    document.getElementById('dialCountdown').textContent = '';
+    dialUssd();
+  });
+
   function showPaymentInstructions(){
     document.getElementById('instAmount').textContent = fmt(selectedOffer.price);
     document.getElementById('instUssd').textContent = ussdCode(paymentMethodNet, selectedOffer.price);
     mtnNotice.style.display = 'none';
     paymentInstructions.style.display = 'block';
     paymentInstructions.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    startDialCountdown();
   }
 
   document.getElementById('subForm').addEventListener('submit', function(e){
@@ -244,15 +279,11 @@
   });
 
   confirmPaidBtn.addEventListener('click', async function(){
+    clearInterval(dialCountdownTimer);
+    document.getElementById('dialCountdown').textContent = '';
+
     const txRefInput = document.getElementById('txRef');
     const txRef = txRefInput.value.trim();
-
-    if (!txRef){
-      setFieldError('field-ref', true);
-      txRefInput.focus();
-      return;
-    }
-    clearFieldError('field-ref');
 
     confirmPaidBtn.disabled = true;
 
@@ -268,7 +299,7 @@
           reseau: selectedNet.toUpperCase() + (paymentMethodNet !== selectedNet ? ' (payé via ' + paymentMethodNet.toUpperCase() + ')' : ''),
           forfait: selectedOffer.label + ' (' + selectedOffer.sub + ')',
           montant: selectedOffer.price,
-          reference: txRef
+          reference: txRef || null
         })
       });
       const data = await res.json();
@@ -282,7 +313,7 @@
       'Nom : ' + pendingNom + '\n' +
       'Numéro : ' + pendingTelFormatted + '\n' +
       'Réseau : ' + selectedNet.toUpperCase() + (paymentMethodNet !== selectedNet ? ' (payé via ' + paymentMethodNet.toUpperCase() + ')' : '') +
-      '\nRéférence SMS : ' + txRef +
+      (txRef ? '\nRéférence SMS : ' + txRef : '') +
       (orderCode ? '\nCode de commande : ' + orderCode : '');
     window.open('https://wa.me/237656889326?text=' + encodeURIComponent(msg), '_blank');
 
@@ -327,6 +358,8 @@
   }
 
   cancelInstBtn.addEventListener('click', function(){
+    clearInterval(dialCountdownTimer);
+    document.getElementById('dialCountdown').textContent = '';
     paymentInstructions.style.display = 'none';
     document.getElementById('txRef').value = '';
     clearFieldError('field-ref');
