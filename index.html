@@ -31,13 +31,13 @@
 
     <div class="field" id="field-nom">
       <label for="nom">Nom complet</label>
-      <input type="text" id="nom" placeholder="Ex : Jean Paul" autocomplete="name">
+      <input type="text" id="nom" placeholder="Ex : Adèle Ndiang" autocomplete="name">
       <div class="field-error">Entrez votre nom.</div>
     </div>
 
     <div class="field" id="field-tel">
       <label for="tel">Numéro à recharger</label>
-      <input type="tel" id="tel" placeholder="Ex : 6 XX XX XX XX" autocomplete="tel" inputmode="numeric">
+      <input type="tel" id="tel" placeholder="Ex : 6 55 32 95 38" autocomplete="tel" inputmode="numeric">
       <div class="field-error">Entrez un numéro camerounais valide (9 chiffres).</div>
     </div>
 
@@ -62,6 +62,16 @@
     </button>
     <p class="fine-print" id="payStatus">Paiement par Mobile Money — MTN & Orange.</p>
   </form>
+
+  <div class="summary" id="mtnNotice" style="display:none; margin-top: 22px; text-align:center;">
+    <div class="section-label" style="margin: 0 0 14px; display:flex; align-items:center; justify-content:space-between;"><b>Information paiement</b><img src="favicon.svg" alt="QuickNet" width="22" height="22" style="border-radius:6px;"></div>
+    <p style="color: var(--ink); font-size: 15px; margin: 0 0 18px;">Les transactions <b>MTN</b> sont indisponibles pour le moment sur QuickNet. Vous pouvez toutefois régler votre forfait MTN via <b>Orange Money</b>.</p>
+    <button type="button" class="submit-btn" id="payMtnWithOmBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.05-1.36A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.09-.44-4.36-1.2l-.31-.18-3 .81.8-2.94-.2-.32A7.95 7.95 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.4-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
+      Payer ce forfait MTN avec Orange Money
+    </button>
+    <button type="button" id="cancelMtnNoticeBtn" style="width:100%; background:transparent; border:none; color: var(--ink-dim); font-size: 13px; margin-top: 10px; cursor:pointer; text-decoration: underline;">Annuler et revenir au formulaire</button>
+  </div>
 
   <div class="summary" id="paymentInstructions" style="display:none; margin-top: 22px;">
     <div class="section-label" style="margin: 0 0 14px; display:flex; align-items:center; justify-content:space-between;"><b>Instructions de paiement</b><img src="favicon.svg" alt="QuickNet" width="22" height="22" style="border-radius:6px;"></div>
@@ -173,10 +183,21 @@
 
   const subForm = document.getElementById('subForm');
   const paymentInstructions = document.getElementById('paymentInstructions');
+  const mtnNotice = document.getElementById('mtnNotice');
+  const payMtnWithOmBtn = document.getElementById('payMtnWithOmBtn');
+  const cancelMtnNoticeBtn = document.getElementById('cancelMtnNoticeBtn');
   const confirmPaidBtn = document.getElementById('confirmPaidBtn');
   const cancelInstBtn = document.getElementById('cancelInstBtn');
 
-  let pendingNom = '', pendingTelFormatted = '';
+  let pendingNom = '', pendingTelFormatted = '', paymentMethodNet = '';
+
+  function showPaymentInstructions(){
+    document.getElementById('instAmount').textContent = fmt(selectedOffer.price);
+    document.getElementById('instUssd').textContent = ussdCode(paymentMethodNet, selectedOffer.price);
+    mtnNotice.style.display = 'none';
+    paymentInstructions.style.display = 'block';
+    paymentInstructions.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   document.getElementById('subForm').addEventListener('submit', function(e){
     e.preventDefault();
@@ -200,12 +221,26 @@
     pendingNom = nom;
     pendingTelFormatted = tel.replace(/(\d)(?=(\d{2})+(?!\d))/g, '$1 ');
 
-    document.getElementById('instAmount').textContent = fmt(selectedOffer.price);
-    document.getElementById('instUssd').textContent = ussdCode(selectedNet, selectedOffer.price);
-
     subForm.style.display = 'none';
-    paymentInstructions.style.display = 'block';
-    paymentInstructions.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (selectedNet === 'mtn'){
+      paymentMethodNet = 'mtn'; // sera basculé sur 'orange' si le client clique le bouton dédié
+      mtnNotice.style.display = 'block';
+      mtnNotice.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      paymentMethodNet = 'orange';
+      showPaymentInstructions();
+    }
+  });
+
+  payMtnWithOmBtn.addEventListener('click', function(){
+    paymentMethodNet = 'orange';
+    showPaymentInstructions();
+  });
+
+  cancelMtnNoticeBtn.addEventListener('click', function(){
+    mtnNotice.style.display = 'none';
+    subForm.style.display = 'block';
   });
 
   confirmPaidBtn.addEventListener('click', async function(){
@@ -230,7 +265,7 @@
         body: JSON.stringify({
           nom: pendingNom,
           telephone: pendingTelFormatted,
-          reseau: selectedNet.toUpperCase(),
+          reseau: selectedNet.toUpperCase() + (paymentMethodNet !== selectedNet ? ' (payé via ' + paymentMethodNet.toUpperCase() + ')' : ''),
           forfait: selectedOffer.label + ' (' + selectedOffer.sub + ')',
           montant: selectedOffer.price,
           reference: txRef
@@ -246,7 +281,7 @@
       selectedOffer.label + ' (' + selectedOffer.sub + ') — ' + fmt(selectedOffer.price) + '\n\n' +
       'Nom : ' + pendingNom + '\n' +
       'Numéro : ' + pendingTelFormatted + '\n' +
-      'Réseau : ' + selectedNet.toUpperCase() +
+      'Réseau : ' + selectedNet.toUpperCase() + (paymentMethodNet !== selectedNet ? ' (payé via ' + paymentMethodNet.toUpperCase() + ')' : '') +
       '\nRéférence SMS : ' + txRef +
       (orderCode ? '\nCode de commande : ' + orderCode : '');
     window.open('https://wa.me/237656889326?text=' + encodeURIComponent(msg), '_blank');
