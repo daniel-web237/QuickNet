@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo USSD — QuickNet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  body{ display:flex; flex-direction:column; align-items:center; padding: 40px 16px 60px; }
+  .page-title{ text-align:center; margin-bottom: 6px; }
+  .page-sub{ color: var(--ink-dim); font-size: 14px; text-align:center; max-width: 40ch; margin: 0 0 32px; }
+
+  /* Phone mockup */
+  .phone{
+    width: 300px;
+    background: #050b14;
+    border-radius: 40px;
+    padding: 18px 14px 26px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 0 2px #1a2c3f;
+  }
+  .phone-notch{
+    width: 90px;
+    height: 18px;
+    background: #050b14;
+    border-radius: 0 0 14px 14px;
+    margin: 0 auto 10px;
+    position: relative;
+  }
+  .phone-notch::after{
+    content:'';
+    position:absolute;
+    top: 6px; left: 50%; transform: translateX(-50%);
+    width: 34px; height: 5px;
+    background: #101a26;
+    border-radius: 4px;
+  }
+  .screen{
+    background: #04241c;
+    border-radius: 14px;
+    min-height: 260px;
+    padding: 18px 16px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .screen-text{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--signal);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .screen-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: #1f8f74;
+    margin-bottom: 8px;
+    letter-spacing: 0.06em;
+  }
+  .ussd-input-row{
+    display:flex;
+    gap:8px;
+    margin-top: 14px;
+  }
+  .ussd-input-row input{
+    flex:1;
+    background: #06150f;
+    border: 1.5px solid #164034;
+    color: var(--signal);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    outline:none;
+  }
+  .ussd-input-row input::placeholder{ color: #1f8f74; }
+  .ussd-btn{
+    background: var(--signal);
+    color: var(--signal-ink);
+    border:none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-weight:700;
+    font-family:'Space Grotesk', sans-serif;
+    cursor:pointer;
+    font-size: 14px;
+  }
+  .end-actions{
+    display:flex;
+    gap:8px;
+    margin-top: 14px;
+  }
+  .end-actions button{
+    flex:1;
+    background: var(--panel);
+    border: 1.5px solid var(--panel-line);
+    color: var(--ink);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor:pointer;
+  }
+  .phone-footer{
+    text-align:center;
+    color: var(--ink-dim);
+    font-size: 11px;
+    margin-top: 14px;
+  }
+
+  .disclaimer{
+    max-width: 340px;
+    margin-top: 26px;
+    background: var(--panel);
+    border: 1.5px solid var(--panel-line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+  <h1 class="page-title">Démo — Menu USSD QuickNet</h1>
+  <p class="page-sub">Simulation de ce à quoi ressemblera l'expérience une fois branchée sur un vrai code court MTN/Orange.</p>
+
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="screen">
+      <div>
+        <div class="screen-tag" id="sessionTag">SESSION USSD</div>
+        <div class="screen-text" id="screenText">Chargement…</div>
+      </div>
+
+      <div id="inputArea" class="ussd-input-row" style="display:none;">
+        <input type="text" id="ussdInput" placeholder="Entrez votre choix" inputmode="numeric" autocomplete="off">
+        <button class="ussd-btn" id="sendBtn">Envoyer</button>
+      </div>
+
+      <div id="endArea" class="end-actions" style="display:none;">
+        <button id="restartBtn">🔄 Nouvelle session</button>
+      </div>
+    </div>
+    <p class="phone-footer">*126*655# (démo, non connecté au réseau)</p>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ Ceci est une simulation visuelle. Elle ne passe pas encore par le réseau MTN/Orange — le vrai code court nécessite un contrat avec l'opérateur.
+  </div>
+
+<script>
+  const OFFERS = [
+    { price: 1500, label: 'Illimité 1 mois', sub: '2 Go/jour' },
+    { price: 2500, label: 'Illimité 1 mois', sub: '3 Go/jour' },
+    { price: 3500, label: 'Illimité 2 mois', sub: '4 Go/jour' },
+    { price: 4500, label: 'Illimité 3 mois', sub: 'Sans limite/jour' },
+    { price: 7500, label: 'Illimité 4 mois', sub: 'Sans limite/jour' },
+    { price: 8500, label: 'Illimité 6 mois', sub: 'Sans limite/jour' },
+    { price: 20000, label: 'Illimité 9 mois', sub: 'Sans limite/jour' },
+  ];
+
+  const fmt = n => n.toLocaleString('fr-FR') + ' F';
+
+  const screenTextEl = document.getElementById('screenText');
+  const sessionTagEl = document.getElementById('sessionTag');
+  const inputAreaEl = document.getElementById('inputArea');
+  const endAreaEl = document.getElementById('endArea');
+  const ussdInputEl = document.getElementById('ussdInput');
+
+  let state = 'root';
+  let selectedOfferIndex = null;
+
+  function render(text, { ended = false } = {}){
+    screenTextEl.textContent = text;
+    sessionTagEl.textContent = ended ? 'SESSION TERMINÉE' : 'SESSION USSD';
+    inputAreaEl.style.display = ended ? 'none' : 'flex';
+    endAreaEl.style.display = ended ? 'flex' : 'none';
+    if (!ended){
+      ussdInputEl.value = '';
+      ussdInputEl.focus();
+    }
+  }
+
+  function screenRoot(){
+    state = 'root';
+    render(
+      'Bienvenue sur QuickNet\n' +
+      '1. Acheter un forfait\n' +
+      '2. Mes forfaits\n' +
+      '3. Aide'
+    );
+  }
+
+  function screenOffers(){
+    state = 'offers';
+    let lines = OFFERS.map((o, i) => (i + 1) + '. ' + fmt(o.price) + ' - ' + o.label + ' ' + o.sub);
+    render('Choisissez un forfait :\n' + lines.join('\n') + '\n0. Retour');
+  }
+
+  function screenConfirm(index){
+    state = 'confirm';
+    selectedOfferIndex = index;
+    const o = OFFERS[index];
+    render(
+      'Forfait : ' + o.label + ' (' + o.sub + ')\n' +
+      'Prix : ' + fmt(o.price) + '\n\n' +
+      '1. Confirmer\n' +
+      '0. Annuler'
+    );
+  }
+
+  function screenPaymentEnd(){
+    const o = OFFERS[selectedOfferIndex];
+    render(
+      'Merci ! Pour finaliser :\n' +
+      'Orange : #150*1*1*655329538*' + o.price + '#\n' +
+      'MTN : *126*1*655329538*' + o.price + '#\n\n' +
+      'Vous recevrez la confirmation par SMS.',
+      { ended: true }
+    );
+  }
+
+  function screenMesForfaits(){
+    render(
+      'Mes forfaits\n\n' +
+      'Aucun forfait actif pour ce numéro (démo).\n\n' +
+      'Composez à nouveau pour souscrire.',
+      { ended: true }
+    );
+  }
+
+  function screenAide(){
+    render(
+      'Aide QuickNet\n\n' +
+      'WhatsApp : 656 889 326\n' +
+      'Site : quick-net-seven.vercel.app\n\n' +
+      'Nos équipes vous répondent rapidement.',
+      { ended: true }
+    );
+  }
+
+  function screenInvalid(){
+    render('Option invalide.\n\nRecommencez la session.', { ended: true });
+  }
+
+  function handleInput(){
+    const val = ussdInputEl.value.trim();
+
+    if (state === 'root'){
+      if (val === '1') return screenOffers();
+      if (val === '2') return screenMesForfaits();
+      if (val === '3') return screenAide();
+      return screenInvalid();
+    }
+
+    if (state === 'offers'){
+      if (val === '0') return screenRoot();
+      const idx = parseInt(val, 10) - 1;
+      if (idx >= 0 && idx < OFFERS.length) return screenConfirm(idx);
+      return screenInvalid();
+    }
+
+    if (state === 'confirm'){
+      if (val === '1') return screenPaymentEnd();
+      if (val === '0') return screenRoot();
+      return screenInvalid();
+    }
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', handleInput);
+  ussdInputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleInput(); });
+  document.getElementById('restartBtn').addEventListener('click', screenRoot);
+
+  screenRoot();
+</script>
+</body>
+</html>
